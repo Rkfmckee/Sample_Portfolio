@@ -6,41 +6,56 @@ import gsap from 'gsap';
 const gui = new dat.GUI();
 const world = {
 	plane: {
-		width: 20,
-		height: 10,
-		widthSegments: 20,
-		heightSegments: 10
+		width: 400,
+		height: 400,
+		widthSegments: 50,
+		heightSegments: 50
 	}
 };
 
-gui.add(world.plane, 'width', 1, 20).onChange(updatePlaneGeometry);
-gui.add(world.plane, 'height', 1, 10).onChange(updatePlaneGeometry);
-gui.add(world.plane, 'widthSegments', 1, 20).onChange(updatePlaneGeometry);
-gui.add(world.plane, 'heightSegments', 1, 10).onChange(updatePlaneGeometry);
+gui.add(world.plane, 'width', 1, 400).onChange(updatePlaneGeometry);
+gui.add(world.plane, 'height', 1, 400).onChange(updatePlaneGeometry);
+gui.add(world.plane, 'widthSegments', 1, 50).onChange(updatePlaneGeometry);
+gui.add(world.plane, 'heightSegments', 1, 50).onChange(updatePlaneGeometry);
 
 function updatePlaneGeometry() {
 	plane.geometry.dispose();
 	plane.geometry = generatePlaneGeometry();
-	randomizePlaneGeometryZ();
+	randomizePlaneVertexPositions();
 	setPlaneColors();
 }
 
 function generatePlaneGeometry() {
-	return new THREE.PlaneGeometry(
+	const geometry = new THREE.PlaneGeometry(
 		world.plane.width,
 		world.plane.height, 
 		world.plane.widthSegments,
 		world.plane.heightSegments
 	);
+
+	geometry.attributes.position.originalPosition = geometry.attributes.position.array;
+	geometry.attributes.position.randomValues = randomValues;
+
+	return geometry;
 }
 
-function randomizePlaneGeometryZ() {
+const randomValues = [];
+
+function randomizePlaneVertexPositions() {
 	const {array} = plane.geometry.attributes.position;
 
-	for (let i = 0; i < array.length; i += 3) {
-		const z = array[i+2];
+	for (let i = 0; i < array.length; i++) {
+		randomValues.push(Math.random() * Math.PI * 2);
+		
+		if (i % 3 == 0) {
+			const x = array[i];
+			const y = array[i+1];
+			const z = array[i+2];
 
-		array[i+2] = z + Math.random();
+			array[i] = x + (Math.random() - 0.5) * 5;
+			array[i+1] = y + (Math.random() - 0.5) * 5;
+			array[i+2] = z + (Math.random() - 0.5) * 5;
+		}
 	}
 }
 
@@ -59,7 +74,7 @@ const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
-camera.position.z = 5;
+camera.position.z = 100;
 scene.add(camera);
 
 var orbitControls = new OrbitControls(camera, canvas);
@@ -77,27 +92,40 @@ const planeMaterial = new THREE.MeshPhongMaterial({
 
 const plane = new THREE.Mesh(planeGeometry, planeMaterial);
 
-randomizePlaneGeometryZ();
+randomizePlaneVertexPositions();
 setPlaneColors();
 scene.add(plane);
 
-function createLight(x, y, z) {
+function createLight(z) {
 	const light = new THREE.DirectionalLight('white', 1)
-	light.position.set(x, y, z);
+	light.position.set(0, 1, z);
 	scene.add(light);
 }
 
-createLight(0, 0, 1);
-createLight(0, 0, -1);
+createLight(1);
+createLight(-1);
 
 const mouse = {
 	x: undefined,
 	y: undefined
 };
 
+let frame = 0;
+
 function animate() {
 	requestAnimationFrame(animate);
 	renderer.render(scene, camera);
+	frame += 0.01;
+
+	const {array, originalPosition, randomValues} = plane.geometry.attributes.position;
+
+	for (let i = 0; i < array.length; i += 3) {
+		array[i] = originalPosition[i] + Math.cos(frame + randomValues[i]) * .01;
+		array[i+1] = originalPosition[i+1] + Math.sin(frame + randomValues[i+1]) * .01;
+	}
+
+	plane.geometry.attributes.position.needsUpdate = true;
+
 	raycaster.setFromCamera(mouse, camera);
 
 	const intersects = raycaster.intersectObject(plane);
