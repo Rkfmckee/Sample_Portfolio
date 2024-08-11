@@ -1,3 +1,47 @@
 body {
 	margin: 0;
 }
+
+.text-container {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	color: white;
+	text-align: center;
+}
+
+.container {
+	position: relative;
+}
+
+h1 {
+	font-family: "Exo 2", sans-serif;
+	font-optical-sizing: auto;
+	font-weight: 600;
+	font-style: normal;
+	font-size: 50px;
+}
+
+p, button {
+	font-family: "Overpass Mono", monospace;
+	font-optical-sizing: auto;
+	font-weight: 400;
+	font-style: normal;
+}
+
+button {
+	border-style: 1px white;
+	border-radius: 10%;
+	background: none;
+	box-shadow: none;
+	padding: 8px 16px;
+	color: white;
+	text-decoration: none;
+	margin-top: 15px;
+}
+
+button:hover {
+	background: white;
+	color: black;
+}
